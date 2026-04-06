@@ -1,4 +1,4 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 // ignore_for_file: avoid_print
@@ -6,8 +6,8 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:table_calendar_example/utils.dart';
+import 'package:table_calendar_tz/table_calendar_tz.dart';
+import 'package:table_calendar_tz_example/utils.dart';
 
 class TableMultiExample extends StatefulWidget {
   const TableMultiExample({super.key});

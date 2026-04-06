@@ -1,10 +1,10 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:table_calendar/src/widgets/calendar_page.dart';
+import 'package:table_calendar_tz/src/widgets/calendar_page.dart';
 
 Widget setupTestWidget(Widget child) {
   return Directionality(

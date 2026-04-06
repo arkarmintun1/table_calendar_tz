@@ -1,12 +1,12 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:table_calendar/src/widgets/cell_content.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:table_calendar_tz/src/widgets/cell_content.dart';
+import 'package:table_calendar_tz/table_calendar_tz.dart';
 
 Widget setupTestWidget(
   DateTime cellDay, {

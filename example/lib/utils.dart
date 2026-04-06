@@ -1,9 +1,9 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:collection';
 
-import 'package:table_calendar/table_calendar.dart';
+import 'package:table_calendar_tz/table_calendar_tz.dart';
 
 /// Example event class.
 class Event {

@@ -1,10 +1,10 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
-import 'package:table_calendar/src/customization/calendar_builders.dart';
-import 'package:table_calendar/src/customization/calendar_style.dart';
+import 'package:table_calendar_tz/src/customization/calendar_builders.dart';
+import 'package:table_calendar_tz/src/customization/calendar_style.dart';
 
 class CellContent extends StatelessWidget {
   final DateTime day;

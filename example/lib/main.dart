@@ -1,13 +1,13 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:table_calendar_example/pages/basics_example.dart';
-import 'package:table_calendar_example/pages/complex_example.dart';
-import 'package:table_calendar_example/pages/events_example.dart';
-import 'package:table_calendar_example/pages/multi_example.dart';
-import 'package:table_calendar_example/pages/range_example.dart';
+import 'package:table_calendar_tz_example/pages/basics_example.dart';
+import 'package:table_calendar_tz_example/pages/complex_example.dart';
+import 'package:table_calendar_tz_example/pages/events_example.dart';
+import 'package:table_calendar_tz_example/pages/multi_example.dart';
+import 'package:table_calendar_tz_example/pages/range_example.dart';
 
 void main() {
   initializeDateFormatting().then((_) => runApp(const MyApp()));

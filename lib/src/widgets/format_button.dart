@@ -1,10 +1,10 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:table_calendar/src/shared/utils.dart' show CalendarFormat;
+import 'package:table_calendar_tz/src/shared/utils.dart' show CalendarFormat;
 
 class FormatButton extends StatelessWidget {
   final CalendarFormat calendarFormat;

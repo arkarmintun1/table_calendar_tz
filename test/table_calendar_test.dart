@@ -1,13 +1,15 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart' as intl;
-import 'package:table_calendar/src/widgets/calendar_header.dart';
-import 'package:table_calendar/src/widgets/cell_content.dart';
-import 'package:table_calendar/src/widgets/custom_icon_button.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:table_calendar_tz/src/widgets/calendar_header.dart';
+import 'package:table_calendar_tz/src/widgets/cell_content.dart';
+import 'package:table_calendar_tz/src/widgets/custom_icon_button.dart';
+import 'package:table_calendar_tz/table_calendar_tz.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 import 'common.dart';
 
@@ -1458,6 +1460,274 @@ void main() {
 
         expect(oobStartCellContent.isWithinRange, false);
         expect(oobEndCellContent.isWithinRange, false);
+      },
+    );
+  });
+
+  group('Timezone support:', () {
+    setUpAll(() {
+      tzdata.initializeTimeZones();
+    });
+
+    testWidgets(
+      'April 2026 Europe/Berlin shows correct days despite DST spring-forward (the original bug)',
+      (tester) async {
+        final location = tz.getLocation('Europe/Berlin');
+        final focusedDay = tz.TZDateTime(location, 2026, 4, 15);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(location, 2026),
+              lastDay: tz.TZDateTime(location, 2026, 12, 31),
+              currentDay: focusedDay,
+              timeZone: location,
+            ),
+          ),
+        );
+
+        // April 1, 2026 is Wednesday. Sunday start → 3 leading days (Mar 29-31).
+        // April 30 is Thursday → 2 trailing days (May 1-2).
+        // Grid: Mar 29 → May 2 (35 days, 5 rows).
+        final firstVisibleDay = tz.TZDateTime(location, 2026, 3, 29);
+        final lastVisibleDay = tz.TZDateTime(location, 2026, 5, 2);
+
+        expect(
+          find.byKey(cellContentKey(firstVisibleDay)),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(cellContentKey(lastVisibleDay)),
+          findsOneWidget,
+        );
+
+        // The DST spring-forward (Mar 29) is the first visible day.
+        // Verify April 1 (Wednesday) is present — this was the bug scenario.
+        final april1 = tz.TZDateTime(location, 2026, 4);
+        expect(find.byKey(cellContentKey(april1)), findsOneWidget);
+
+        // March 28 must NOT be in the grid (this was the DST bug symptom)
+        final march28 = tz.TZDateTime(location, 2026, 3, 28);
+        expect(find.byKey(cellContentKey(march28)), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'correct day count in month view with timezone',
+      (tester) async {
+        final location = tz.getLocation('Europe/Berlin');
+        final focusedDay = tz.TZDateTime(location, 2026, 4, 15);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(location, 2026),
+              lastDay: tz.TZDateTime(location, 2026, 12, 31),
+              currentDay: focusedDay,
+              timeZone: location,
+            ),
+          ),
+        );
+
+        final dayCells = tester.widgetList(find.byType(CellContent));
+        expect(dayCells.length, 35);
+      },
+    );
+
+    testWidgets(
+      'onDaySelected returns TZDateTime when timezone is set',
+      (tester) async {
+        final location = tz.getLocation('America/New_York');
+        final focusedDay = tz.TZDateTime(location, 2026, 7, 15);
+        DateTime? selectedDay;
+        DateTime? focusedDayResult;
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(location, 2026, 5),
+              lastDay: tz.TZDateTime(location, 2026, 9, 30),
+              currentDay: focusedDay,
+              timeZone: location,
+              onDaySelected: (selected, focused) {
+                selectedDay = selected;
+                focusedDayResult = focused;
+              },
+            ),
+          ),
+        );
+
+        final tappedDay = tz.TZDateTime(location, 2026, 7, 20);
+        final tappedDayKey = cellContentKey(tappedDay);
+
+        await tester.tap(find.byKey(tappedDayKey));
+        await tester.pumpAndSettle();
+
+        expect(selectedDay, isNotNull);
+        expect(selectedDay, isA<tz.TZDateTime>());
+        expect((selectedDay! as tz.TZDateTime).location, location);
+        expect(selectedDay!.year, 2026);
+        expect(selectedDay!.month, 7);
+        expect(selectedDay!.day, 20);
+
+        expect(focusedDayResult, isA<tz.TZDateTime>());
+      },
+    );
+
+    testWidgets(
+      'page swiping works correctly with timezone',
+      (tester) async {
+        final location = tz.getLocation('America/New_York');
+        final focusedDay = tz.TZDateTime(location, 2026, 7, 15);
+        DateTime? updatedFocusedDay;
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(location, 2026, 5),
+              lastDay: tz.TZDateTime(location, 2026, 9, 30),
+              currentDay: focusedDay,
+              timeZone: location,
+              onPageChanged: (day) {
+                updatedFocusedDay = day;
+              },
+            ),
+          ),
+        );
+
+        expect(find.text('July 2026'), findsOneWidget);
+
+        await tester.drag(
+          find.byType(CellContent).first,
+          const Offset(-500, 0),
+        );
+        await tester.pumpAndSettle();
+
+        expect(updatedFocusedDay, isNotNull);
+        expect(updatedFocusedDay, isA<tz.TZDateTime>());
+        expect(updatedFocusedDay!.month, 8);
+        expect(find.text('August 2026'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'week format across DST spring-forward shows 7 cells',
+      (tester) async {
+        final location = tz.getLocation('Europe/Berlin');
+        // Focused on March 30 (Monday). Sunday start → week starts Mar 29 (DST day).
+        final focusedDay = tz.TZDateTime(location, 2026, 3, 30);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(location, 2026),
+              lastDay: tz.TZDateTime(location, 2026, 12, 31),
+              currentDay: focusedDay,
+              timeZone: location,
+              calendarFormat: CalendarFormat.week,
+            ),
+          ),
+        );
+
+        final dayCells = tester.widgetList(find.byType(CellContent));
+        expect(dayCells.length, 7);
+      },
+    );
+
+    testWidgets(
+      'range selection works with timezone-aware dates',
+      (tester) async {
+        final location = tz.getLocation('America/Chicago');
+        final focusedDay = tz.TZDateTime(location, 2026, 7, 15);
+        DateTime? rangeStart;
+        DateTime? rangeEnd;
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(location, 2026, 5),
+              lastDay: tz.TZDateTime(location, 2026, 9, 30),
+              currentDay: focusedDay,
+              timeZone: location,
+              rangeSelectionMode: RangeSelectionMode.enforced,
+              onRangeSelected: (start, end, focused) {
+                rangeStart = start;
+                rangeEnd = end;
+              },
+            ),
+          ),
+        );
+
+        final firstTap = tz.TZDateTime(location, 2026, 7, 8);
+        final secondTap = tz.TZDateTime(location, 2026, 7, 21);
+
+        await tester.tap(find.byKey(cellContentKey(firstTap)));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(cellContentKey(secondTap)));
+        await tester.pumpAndSettle();
+
+        expect(rangeStart, isA<tz.TZDateTime>());
+        expect(rangeEnd, isA<tz.TZDateTime>());
+        expect(rangeStart!.day, 8);
+        expect(rangeEnd!.day, 21);
+      },
+    );
+
+    testWidgets(
+      'selectedDayPredicate works with TZDateTime',
+      (tester) async {
+        final location = tz.getLocation('Europe/London');
+        final focusedDay = tz.TZDateTime(location, 2026, 7, 15);
+        final selectedDay = tz.TZDateTime(location, 2026, 7, 20);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(location, 2026, 5),
+              lastDay: tz.TZDateTime(location, 2026, 9, 30),
+              currentDay: focusedDay,
+              timeZone: location,
+              selectedDayPredicate: (day) => isSameDay(day, selectedDay),
+            ),
+          ),
+        );
+
+        final selectedKey = cellContentKey(selectedDay);
+        final selectedCell =
+            tester.widget(find.byKey(selectedKey)) as CellContent;
+        expect(selectedCell.isSelected, true);
+      },
+    );
+
+    testWidgets(
+      'currentDay marking works with TZDateTime',
+      (tester) async {
+        final location = tz.getLocation('Asia/Tokyo');
+        final currentDay = tz.TZDateTime(location, 2026, 7, 15);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: currentDay,
+              firstDay: tz.TZDateTime(location, 2026, 5),
+              lastDay: tz.TZDateTime(location, 2026, 9, 30),
+              currentDay: currentDay,
+              timeZone: location,
+            ),
+          ),
+        );
+
+        final currentDayKey = cellContentKey(currentDay);
+        final currentDayCell =
+            tester.widget(find.byKey(currentDayKey)) as CellContent;
+        expect(currentDayCell.isToday, true);
       },
     );
   });

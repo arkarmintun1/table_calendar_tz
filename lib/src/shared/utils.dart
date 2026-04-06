@@ -1,4 +1,4 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/widgets.dart';
@@ -43,13 +43,16 @@ int getWeekdayNumber(StartingDayOfWeek weekday) {
 }
 
 /// Returns `date` normalized to midnight within provided [location] or UTC when absent.
+/// If [date] is a [tz.TZDateTime] and no [location] is given, its location is preserved.
 DateTime normalizeDate(DateTime date, {tz.Location? location}) {
-  if (location == null) {
+  final loc = location ?? (date is tz.TZDateTime ? date.location : null);
+
+  if (loc == null) {
     return DateTime.utc(date.year, date.month, date.day);
   }
 
-  final target = tz.TZDateTime.from(date, location);
-  return tz.TZDateTime(location, target.year, target.month, target.day);
+  final target = tz.TZDateTime.from(date, loc);
+  return tz.TZDateTime(loc, target.year, target.month, target.day);
 }
 
 /// Checks if two DateTime objects are the same day.

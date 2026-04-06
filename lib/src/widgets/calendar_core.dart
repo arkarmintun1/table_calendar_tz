@@ -1,9 +1,9 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
-import 'package:table_calendar/src/shared/utils.dart';
-import 'package:table_calendar/src/widgets/calendar_page.dart';
+import 'package:table_calendar_tz/src/shared/utils.dart';
+import 'package:table_calendar_tz/src/widgets/calendar_page.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class CalendarCore extends StatelessWidget {
@@ -146,11 +146,19 @@ class CalendarCore extends StatelessWidget {
   }
 
   int _getWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 7;
+    final weekStart = _firstDayOfWeek(first);
+    final lastUtc = DateTime.utc(last.year, last.month, last.day);
+    final startUtc =
+        DateTime.utc(weekStart.year, weekStart.month, weekStart.day);
+    return lastUtc.difference(startUtc).inDays ~/ 7;
   }
 
   int _getTwoWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 14;
+    final weekStart = _firstDayOfWeek(first);
+    final lastUtc = DateTime.utc(last.year, last.month, last.day);
+    final startUtc =
+        DateTime.utc(weekStart.year, weekStart.month, weekStart.day);
+    return lastUtc.difference(startUtc).inDays ~/ 14;
   }
 
   DateTime _getFocusedDay(
@@ -168,7 +176,9 @@ class CalendarCore extends StatelessWidget {
     switch (format) {
       case CalendarFormat.month:
         day = _createDateTime(
-            prevFocusedDay.year, prevFocusedDay.month + pageDif);
+          prevFocusedDay.year,
+          prevFocusedDay.month + pageDif,
+        );
       case CalendarFormat.twoWeeks:
         day = _createDateTime(
           prevFocusedDay.year,
@@ -234,37 +244,62 @@ class CalendarCore extends StatelessWidget {
 
   DateTimeRange _daysInWeek(DateTime focusedDay) {
     final daysBefore = _getDaysBefore(focusedDay);
-    final firstToDisplay = focusedDay.subtract(Duration(days: daysBefore));
-    final lastToDisplay = firstToDisplay.add(const Duration(days: 7));
+    final firstToDisplay = _createDateTime(
+      focusedDay.year,
+      focusedDay.month,
+      focusedDay.day - daysBefore,
+    );
+    final lastToDisplay = _createDateTime(
+      firstToDisplay.year,
+      firstToDisplay.month,
+      firstToDisplay.day + 7,
+    );
     return DateTimeRange(start: firstToDisplay, end: lastToDisplay);
   }
 
   DateTimeRange _daysInTwoWeeks(DateTime focusedDay) {
     final daysBefore = _getDaysBefore(focusedDay);
-    final firstToDisplay = focusedDay.subtract(Duration(days: daysBefore));
-    final lastToDisplay = firstToDisplay.add(const Duration(days: 14));
+    final firstToDisplay = _createDateTime(
+      focusedDay.year,
+      focusedDay.month,
+      focusedDay.day - daysBefore,
+    );
+    final lastToDisplay = _createDateTime(
+      firstToDisplay.year,
+      firstToDisplay.month,
+      firstToDisplay.day + 14,
+    );
     return DateTimeRange(start: firstToDisplay, end: lastToDisplay);
   }
 
   DateTimeRange _daysInMonth(DateTime focusedDay) {
     final first = _firstDayOfMonth(focusedDay);
     final daysBefore = _getDaysBefore(first);
-    final firstToDisplay = first.subtract(Duration(days: daysBefore));
+    final firstToDisplay =
+        _createDateTime(first.year, first.month, first.day - daysBefore);
 
     if (sixWeekMonthsEnforced) {
-      final end = firstToDisplay.add(const Duration(days: 42));
+      final end = _createDateTime(
+        firstToDisplay.year,
+        firstToDisplay.month,
+        firstToDisplay.day + 42,
+      );
       return DateTimeRange(start: firstToDisplay, end: end);
     }
 
     final last = _lastDayOfMonth(focusedDay);
     final daysAfter = _getDaysAfter(last);
-    final lastToDisplay = last.add(Duration(days: daysAfter));
+    final lastToDisplay =
+        _createDateTime(last.year, last.month, last.day + daysAfter);
 
     return DateTimeRange(start: firstToDisplay, end: lastToDisplay);
   }
 
   List<DateTime> _daysInRange(DateTime first, DateTime last) {
-    final dayCount = last.difference(first).inDays + 1;
+    final dayCount = DateTime.utc(last.year, last.month, last.day)
+            .difference(DateTime.utc(first.year, first.month, first.day))
+            .inDays +
+        1;
     return List.generate(
       dayCount,
       (index) => _createDateTime(first.year, first.month, first.day + index),
@@ -273,7 +308,7 @@ class CalendarCore extends StatelessWidget {
 
   DateTime _firstDayOfWeek(DateTime week) {
     final daysBefore = _getDaysBefore(week);
-    return week.subtract(Duration(days: daysBefore));
+    return _createDateTime(week.year, week.month, week.day - daysBefore);
   }
 
   DateTime _firstDayOfMonth(DateTime month) {
@@ -291,18 +326,11 @@ class CalendarCore extends StatelessWidget {
     final location = timeZone;
 
     if (location == null) {
-      final date = month.month < 12
-          ? DateTime.utc(month.year, month.month + 1)
-          : DateTime.utc(month.year + 1);
-      return date.subtract(const Duration(days: 1));
+      return DateTime.utc(month.year, month.month + 1, 0);
     }
 
     final localized = tz.TZDateTime.from(month, location);
-    final date = localized.month < 12
-        ? tz.TZDateTime(location, localized.year, localized.month + 1)
-        : tz.TZDateTime(location, localized.year + 1);
-
-    return date.subtract(const Duration(days: 1));
+    return tz.TZDateTime(location, localized.year, localized.month + 1, 0);
   }
 
   int _getRowCount(CalendarFormat format, DateTime focusedDay) {
@@ -316,13 +344,25 @@ class CalendarCore extends StatelessWidget {
 
     final first = _firstDayOfMonth(focusedDay);
     final daysBefore = _getDaysBefore(first);
-    final firstToDisplay = first.subtract(Duration(days: daysBefore));
+    final firstToDisplay =
+        _createDateTime(first.year, first.month, first.day - daysBefore);
 
     final last = _lastDayOfMonth(focusedDay);
     final daysAfter = _getDaysAfter(last);
-    final lastToDisplay = last.add(Duration(days: daysAfter));
+    final lastToDisplay =
+        _createDateTime(last.year, last.month, last.day + daysAfter);
 
-    return (lastToDisplay.difference(firstToDisplay).inDays + 1) ~/ 7;
+    final lastUtc = DateTime.utc(
+      lastToDisplay.year,
+      lastToDisplay.month,
+      lastToDisplay.day,
+    );
+    final firstUtc = DateTime.utc(
+      firstToDisplay.year,
+      firstToDisplay.month,
+      firstToDisplay.day,
+    );
+    return (lastUtc.difference(firstUtc).inDays + 1) ~/ 7;
   }
 
   DateTime _createDateTime(int year, int month, [int day = 1]) {

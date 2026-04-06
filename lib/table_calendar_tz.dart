@@ -1,4 +1,4 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 export 'src/customization/calendar_builders.dart';

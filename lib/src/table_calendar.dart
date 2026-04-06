@@ -1,4 +1,4 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:math';
@@ -6,14 +6,14 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:simple_gesture_detector/simple_gesture_detector.dart';
-import 'package:table_calendar/src/customization/calendar_builders.dart';
-import 'package:table_calendar/src/customization/calendar_style.dart';
-import 'package:table_calendar/src/customization/days_of_week_style.dart';
-import 'package:table_calendar/src/customization/header_style.dart';
-import 'package:table_calendar/src/shared/utils.dart';
-import 'package:table_calendar/src/table_calendar_base.dart';
-import 'package:table_calendar/src/widgets/calendar_header.dart';
-import 'package:table_calendar/src/widgets/cell_content.dart';
+import 'package:table_calendar_tz/src/customization/calendar_builders.dart';
+import 'package:table_calendar_tz/src/customization/calendar_style.dart';
+import 'package:table_calendar_tz/src/customization/days_of_week_style.dart';
+import 'package:table_calendar_tz/src/customization/header_style.dart';
+import 'package:table_calendar_tz/src/shared/utils.dart';
+import 'package:table_calendar_tz/src/table_calendar_base.dart';
+import 'package:table_calendar_tz/src/widgets/calendar_header.dart';
+import 'package:table_calendar_tz/src/widgets/cell_content.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 /// Signature for `onDaySelected` callback. Contains the selected day and focused day.
@@ -785,18 +785,11 @@ class _TableCalendarState<T> extends State<TableCalendar<T>> {
     final location = widget.timeZone;
 
     if (location == null) {
-      final date = month.month < 12
-          ? DateTime.utc(month.year, month.month + 1)
-          : DateTime.utc(month.year + 1);
-      return date.subtract(const Duration(days: 1));
+      return DateTime.utc(month.year, month.month + 1, 0);
     }
 
     final localized = tz.TZDateTime.from(month, location);
-    final date = localized.month < 12
-        ? tz.TZDateTime(location, localized.year, localized.month + 1)
-        : tz.TZDateTime(location, localized.year + 1);
-
-    return date.subtract(const Duration(days: 1));
+    return tz.TZDateTime(location, localized.year, localized.month + 1, 0);
   }
 
   bool _isBeforeMonth(DateTime day, DateTime month) {

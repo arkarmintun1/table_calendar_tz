@@ -1,10 +1,10 @@
-// Copyright 2019 Aleksander Woźniak
+// Copyright 2026 Arkar Min Tun
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
 import 'package:simple_gesture_detector/simple_gesture_detector.dart';
-import 'package:table_calendar/src/shared/utils.dart';
-import 'package:table_calendar/src/widgets/calendar_core.dart';
+import 'package:table_calendar_tz/src/shared/utils.dart';
+import 'package:table_calendar_tz/src/widgets/calendar_core.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class TableCalendarBase extends StatefulWidget {
@@ -298,11 +298,19 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
   }
 
   int _getWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 7;
+    final weekStart = _firstDayOfWeek(first);
+    final lastUtc = DateTime.utc(last.year, last.month, last.day);
+    final startUtc =
+        DateTime.utc(weekStart.year, weekStart.month, weekStart.day);
+    return lastUtc.difference(startUtc).inDays ~/ 7;
   }
 
   int _getTwoWeekCount(DateTime first, DateTime last) {
-    return last.difference(_firstDayOfWeek(first)).inDays ~/ 14;
+    final weekStart = _firstDayOfWeek(first);
+    final lastUtc = DateTime.utc(last.year, last.month, last.day);
+    final startUtc =
+        DateTime.utc(weekStart.year, weekStart.month, weekStart.day);
+    return lastUtc.difference(startUtc).inDays ~/ 14;
   }
 
   int _getRowCount(CalendarFormat format, DateTime focusedDay) {
@@ -316,13 +324,25 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
 
     final first = _firstDayOfMonth(focusedDay);
     final daysBefore = _getDaysBefore(first);
-    final firstToDisplay = first.subtract(Duration(days: daysBefore));
+    final firstToDisplay =
+        _createDateTime(first.year, first.month, first.day - daysBefore);
 
     final last = _lastDayOfMonth(focusedDay);
     final daysAfter = _getDaysAfter(last);
-    final lastToDisplay = last.add(Duration(days: daysAfter));
+    final lastToDisplay =
+        _createDateTime(last.year, last.month, last.day + daysAfter);
 
-    return (lastToDisplay.difference(firstToDisplay).inDays + 1) ~/ 7;
+    final lastUtc = DateTime.utc(
+      lastToDisplay.year,
+      lastToDisplay.month,
+      lastToDisplay.day,
+    );
+    final firstUtc = DateTime.utc(
+      firstToDisplay.year,
+      firstToDisplay.month,
+      firstToDisplay.day,
+    );
+    return (lastUtc.difference(firstUtc).inDays + 1) ~/ 7;
   }
 
   int _getDaysBefore(DateTime firstDay) {
@@ -344,7 +364,7 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
 
   DateTime _firstDayOfWeek(DateTime week) {
     final daysBefore = _getDaysBefore(week);
-    return week.subtract(Duration(days: daysBefore));
+    return _createDateTime(week.year, week.month, week.day - daysBefore);
   }
 
   DateTime _firstDayOfMonth(DateTime month) {
@@ -362,17 +382,20 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
     final location = widget.timeZone;
 
     if (location == null) {
-      final date = month.month < 12
-          ? DateTime.utc(month.year, month.month + 1)
-          : DateTime.utc(month.year + 1);
-      return date.subtract(const Duration(days: 1));
+      return DateTime.utc(month.year, month.month + 1, 0);
     }
 
     final localized = tz.TZDateTime.from(month, location);
-    final date = localized.month < 12
-        ? tz.TZDateTime(location, localized.year, localized.month + 1)
-        : tz.TZDateTime(location, localized.year + 1);
+    return tz.TZDateTime(location, localized.year, localized.month + 1, 0);
+  }
 
-    return date.subtract(const Duration(days: 1));
+  DateTime _createDateTime(int year, int month, [int day = 1]) {
+    final location = widget.timeZone;
+
+    if (location == null) {
+      return DateTime.utc(year, month, day);
+    }
+
+    return tz.TZDateTime(location, year, month, day);
   }
 }
