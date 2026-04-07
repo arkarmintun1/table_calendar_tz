@@ -2,7 +2,7 @@ name: table_calendar_tz
 description: >-
   Highly customizable, feature-packed calendar widget for Flutter with
   correct timezone and DST support. Fork of table_calendar.
-version: 1.0.1
+version: 1.0.2
 homepage: https://github.com/arkarmintun1/table_calendar_tz
 
 environment:
