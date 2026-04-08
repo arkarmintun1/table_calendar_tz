@@ -4,6 +4,12 @@ All notable changes to **table_calendar_tz** will be documented in this file.
 
 This project is a fork of [table_calendar](https://github.com/aleksanderwozniak/table_calendar) (v3.2.0).
 
+## 1.0.3
+
+- Fix cross-timezone date shift bug where `TZDateTime.from()` converted dates via epoch, causing calendar dates to shift when device and app timezones differ (e.g. device in Singapore, app in Berlin would show Feb 28 instead of March 1)
+- Replace all `TZDateTime.from(date, location)` calls with direct component construction `TZDateTime(location, date.year, date.month, date.day)` in `normalizeDate`, `_firstDayOfMonth`, and `_lastDayOfMonth`
+- Add cross-timezone regression tests for `normalizeDate`, `TableCalendar`, and `TableCalendarBase`
+
 ## 1.0.2
 
 - Fix version number display in README

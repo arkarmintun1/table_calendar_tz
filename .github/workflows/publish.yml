@@ -21,10 +21,6 @@ jobs:
         with:
           channel: "stable"
 
-      - name: Install extension dependencies
-        working-directory: devtools_extension
-        run: flutter pub get
-
       - name: Install package dependencies
         run: flutter pub get
 

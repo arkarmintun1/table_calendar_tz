@@ -29,7 +29,7 @@ Add the following to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  table_calendar_tz: ^1.0.2
+  table_calendar_tz: ^1.0.3
 ```
 
 Or use a Git dependency:
