@@ -824,6 +824,124 @@ void main() {
         }
       },
     );
+
+    testWidgets(
+      'cross-timezone: focusedDay from ahead-TZ preserves month in behind-TZ grid',
+      (tester) async {
+        // focusedDay created in Singapore (UTC+8), but calendar uses Berlin (UTC+1).
+        // March 1 00:00 SGT = Feb 28 16:00 UTC. Old code would compute
+        // _firstDayOfMonth as February's first day instead of March's.
+        final singapore = tz.getLocation('Asia/Singapore');
+        final berlin = tz.getLocation('Europe/Berlin');
+
+        final focusedDay = tz.TZDateTime(singapore, 2027, 3, 15);
+        final capturedDays = <DateTime>[];
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendarBase(
+              firstDay: tz.TZDateTime(berlin, 2027),
+              lastDay: tz.TZDateTime(berlin, 2027, 12, 31),
+              focusedDay: focusedDay,
+              timeZone: berlin,
+              dowVisible: false,
+              rowHeight: 52,
+              dayBuilder: (context, day, focusedDay) {
+                capturedDays.add(day);
+                return Text('${day.day}', key: dateToKey(day));
+              },
+            ),
+          ),
+        );
+
+        // March 1 2027 is Monday. Sunday start → 1 leading day (Feb 28).
+        // March 31 is Wednesday → 3 trailing days (Apr 1-3).
+        // Grid: Feb 28 → Apr 3 (35 days, 5 rows).
+        expect(capturedDays, isNotEmpty);
+
+        final march1 = tz.TZDateTime(berlin, 2027, 3);
+        final march31 = tz.TZDateTime(berlin, 2027, 3, 31);
+        expect(find.byKey(dateToKey(march1)), findsOneWidget);
+        expect(find.byKey(dateToKey(march31)), findsOneWidget);
+
+        // Verify all captured days are consecutive
+        for (int i = 1; i < capturedDays.length; i++) {
+          final prev = capturedDays[i - 1];
+          final curr = capturedDays[i];
+          final diffDays = DateTime.utc(curr.year, curr.month, curr.day)
+              .difference(DateTime.utc(prev.year, prev.month, prev.day))
+              .inDays;
+          expect(diffDays, 1);
+        }
+      },
+    );
+
+    testWidgets(
+      'cross-timezone: Jan 1 from Tokyo targeted to New York shows January grid',
+      (tester) async {
+        // Jan 1 00:00 JST = Dec 31 10:00 EST via epoch.
+        // Old code: _firstDayOfMonth would compute December boundaries.
+        final tokyo = tz.getLocation('Asia/Tokyo');
+        final newYork = tz.getLocation('America/New_York');
+
+        final focusedDay = tz.TZDateTime(tokyo, 2027, 1, 15);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendarBase(
+              firstDay: tz.TZDateTime(newYork, 2026, 10),
+              lastDay: tz.TZDateTime(newYork, 2027, 6, 30),
+              focusedDay: focusedDay,
+              timeZone: newYork,
+              dowVisible: false,
+              rowHeight: 52,
+              dayBuilder: (context, day, focusedDay) {
+                return Text('${day.day}', key: dateToKey(day));
+              },
+            ),
+          ),
+        );
+
+        final jan1 = tz.TZDateTime(newYork, 2027);
+        final jan31 = tz.TZDateTime(newYork, 2027, 1, 31);
+        expect(find.byKey(dateToKey(jan1)), findsOneWidget);
+        expect(find.byKey(dateToKey(jan31)), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cross-timezone: month boundary dates are correct when source TZ is far behind target',
+      (tester) async {
+        // Device in Honolulu (UTC-10), app in Tokyo (UTC+9). 19-hour difference.
+        // March 31 midnight HST = April 1 05:00 UTC = April 1 14:00 JST via epoch.
+        // Old _lastDayOfMonth would compute April's last day instead of March's.
+        final honolulu = tz.getLocation('Pacific/Honolulu');
+        final tokyo = tz.getLocation('Asia/Tokyo');
+
+        final focusedDay = tz.TZDateTime(honolulu, 2027, 3, 15);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendarBase(
+              firstDay: tz.TZDateTime(tokyo, 2027),
+              lastDay: tz.TZDateTime(tokyo, 2027, 12, 31),
+              focusedDay: focusedDay,
+              timeZone: tokyo,
+              dowVisible: false,
+              rowHeight: 52,
+              dayBuilder: (context, day, focusedDay) {
+                return Text('${day.day}', key: dateToKey(day));
+              },
+            ),
+          ),
+        );
+
+        final march1 = tz.TZDateTime(tokyo, 2027, 3);
+        final march31 = tz.TZDateTime(tokyo, 2027, 3, 31);
+        expect(find.byKey(dateToKey(march1)), findsOneWidget);
+        expect(find.byKey(dateToKey(march31)), findsOneWidget);
+      },
+    );
   });
 
   testWidgets(

@@ -183,6 +183,95 @@ void main() {
       expect(normalized.day, 15);
       expect(normalized.hour, 0);
     });
+
+    test(
+        'Preserves calendar date when source TZ is ahead of target TZ (cross-timezone date shift)',
+        () {
+      // Simulates: device in Asia/Singapore (UTC+8), app TZ = Europe/Berlin (UTC+1).
+      // TZDateTime(singapore, 2027, 3, 1) at midnight SGT = Feb 28 16:00 UTC.
+      // Old code: TZDateTime.from() would convert via epoch → Feb 28 in Berlin.
+      // Fixed code: must preserve March 1.
+      final singapore = tz.getLocation('Asia/Singapore');
+      final berlin = tz.getLocation('Europe/Berlin');
+      final source = tz.TZDateTime(singapore, 2027, 3);
+
+      final normalized = normalizeDate(source, location: berlin);
+
+      expect(normalized, isA<tz.TZDateTime>());
+      expect((normalized as tz.TZDateTime).location, berlin);
+      expect(normalized.year, 2027);
+      expect(normalized.month, 3);
+      expect(normalized.day, 1);
+      expect(normalized.hour, 0);
+    });
+
+    test(
+        'Preserves calendar date when source TZ is behind target TZ (cross-timezone date shift)',
+        () {
+      // Simulates: device in America/Los_Angeles (UTC-8), app TZ = Asia/Tokyo (UTC+9).
+      // TZDateTime(la, 2027, 1, 1, 23, 0) at 11 PM PST = Jan 2 07:00 UTC.
+      // Old code: TZDateTime.from() would convert via epoch → Jan 2 in Tokyo.
+      // Fixed code: must preserve January 1.
+      final la = tz.getLocation('America/Los_Angeles');
+      final tokyo = tz.getLocation('Asia/Tokyo');
+      final source = tz.TZDateTime(la, 2027, 1, 1, 23);
+
+      final normalized = normalizeDate(source, location: tokyo);
+
+      expect(normalized, isA<tz.TZDateTime>());
+      expect((normalized as tz.TZDateTime).location, tokyo);
+      expect(normalized.year, 2027);
+      expect(normalized.month, 1);
+      expect(normalized.day, 1);
+      expect(normalized.hour, 0);
+    });
+
+    test('Preserves calendar date at month boundary (last day of month)', () {
+      // March 31 in a far-ahead TZ, targeted to a far-behind TZ.
+      // Epoch conversion could shift to March 30.
+      final tokyo = tz.getLocation('Asia/Tokyo');
+      final honolulu = tz.getLocation('Pacific/Honolulu');
+      final source = tz.TZDateTime(tokyo, 2027, 3, 31);
+
+      final normalized = normalizeDate(source, location: honolulu);
+
+      expect(normalized, isA<tz.TZDateTime>());
+      expect(normalized.year, 2027);
+      expect(normalized.month, 3);
+      expect(normalized.day, 31);
+      expect(normalized.hour, 0);
+    });
+
+    test('Preserves calendar date at year boundary (Jan 1 vs Dec 31)', () {
+      final tokyo = tz.getLocation('Asia/Tokyo');
+      final newYork = tz.getLocation('America/New_York');
+      // Jan 1 00:00 JST = Dec 31 10:00 EST via epoch
+      final source = tz.TZDateTime(tokyo, 2027);
+
+      final normalized = normalizeDate(source, location: newYork);
+
+      expect(normalized, isA<tz.TZDateTime>());
+      expect(normalized.year, 2027);
+      expect(normalized.month, 1);
+      expect(normalized.day, 1);
+      expect(normalized.hour, 0);
+    });
+
+    test('Preserves calendar date with plain DateTime and explicit location',
+        () {
+      // Plain DateTime(2027, 3, 1) — its epoch depends on device TZ.
+      // With our fix, we use .year/.month/.day directly, so it always stays March 1.
+      final berlin = tz.getLocation('Europe/Berlin');
+      final source = DateTime(2027, 3);
+
+      final normalized = normalizeDate(source, location: berlin);
+
+      expect(normalized, isA<tz.TZDateTime>());
+      expect(normalized.year, 2027);
+      expect(normalized.month, 3);
+      expect(normalized.day, 1);
+      expect(normalized.hour, 0);
+    });
   });
 
   group('getWeekdayNumber() tests:', () {

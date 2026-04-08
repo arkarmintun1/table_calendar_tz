@@ -1730,5 +1730,101 @@ void main() {
         expect(currentDayCell.isToday, true);
       },
     );
+
+    testWidgets(
+      'cross-timezone: focusedDay March 1 in ahead-TZ stays March when app TZ is behind',
+      (tester) async {
+        // Simulates the exact bug scenario:
+        // Device timezone: Asia/Singapore (UTC+8)
+        // App timezone: Europe/Berlin (UTC+1)
+        // DateTime(2027, 3, 1) midnight SGT = Feb 28 16:00 UTC
+        // Old code would show February; fixed code shows March.
+        final singapore = tz.getLocation('Asia/Singapore');
+        final berlin = tz.getLocation('Europe/Berlin');
+
+        final focusedDay = tz.TZDateTime(singapore, 2027, 3);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(berlin, 2027),
+              lastDay: tz.TZDateTime(berlin, 2027, 12, 31),
+              currentDay: tz.TZDateTime(berlin, 2027, 3),
+              timeZone: berlin,
+            ),
+          ),
+        );
+
+        expect(find.text('March 2027'), findsOneWidget);
+
+        final march1Key = cellContentKey(tz.TZDateTime(berlin, 2027, 3));
+        expect(find.byKey(march1Key), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cross-timezone: focusedDay Jan 1 in Asia/Tokyo targeted to America/New_York stays January',
+      (tester) async {
+        // Jan 1 00:00 JST = Dec 31 10:00 EST via epoch.
+        // Old code would display December; fixed code displays January.
+        final tokyo = tz.getLocation('Asia/Tokyo');
+        final newYork = tz.getLocation('America/New_York');
+
+        final focusedDay = tz.TZDateTime(tokyo, 2027);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(newYork, 2026, 10),
+              lastDay: tz.TZDateTime(newYork, 2027, 6, 30),
+              currentDay: tz.TZDateTime(newYork, 2027),
+              timeZone: newYork,
+            ),
+          ),
+        );
+
+        expect(find.text('January 2027'), findsOneWidget);
+
+        final jan1Key = cellContentKey(tz.TZDateTime(newYork, 2027));
+        expect(find.byKey(jan1Key), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cross-timezone: onDaySelected preserves calendar date across timezone gap',
+      (tester) async {
+        final tokyo = tz.getLocation('Asia/Tokyo');
+        final chicago = tz.getLocation('America/Chicago');
+        DateTime? selectedDay;
+
+        final focusedDay = tz.TZDateTime(tokyo, 2027, 3, 15);
+
+        await tester.pumpWidget(
+          setupTestWidget(
+            TableCalendar(
+              focusedDay: focusedDay,
+              firstDay: tz.TZDateTime(chicago, 2027),
+              lastDay: tz.TZDateTime(chicago, 2027, 6, 30),
+              currentDay: tz.TZDateTime(chicago, 2027, 3, 15),
+              timeZone: chicago,
+              onDaySelected: (selected, focused) {
+                selectedDay = selected;
+              },
+            ),
+          ),
+        );
+
+        final tappedDay = tz.TZDateTime(chicago, 2027, 3, 20);
+        await tester.tap(find.byKey(cellContentKey(tappedDay)));
+        await tester.pumpAndSettle();
+
+        expect(selectedDay, isNotNull);
+        expect(selectedDay!.year, 2027);
+        expect(selectedDay!.month, 3);
+        expect(selectedDay!.day, 20);
+      },
+    );
   });
 }

@@ -777,8 +777,7 @@ class _TableCalendarState<T> extends State<TableCalendar<T>> {
       return DateTime.utc(month.year, month.month);
     }
 
-    final localized = tz.TZDateTime.from(month, location);
-    return tz.TZDateTime(location, localized.year, localized.month);
+    return tz.TZDateTime(location, month.year, month.month);
   }
 
   DateTime _lastDayOfMonth(DateTime month) {
@@ -788,8 +787,7 @@ class _TableCalendarState<T> extends State<TableCalendar<T>> {
       return DateTime.utc(month.year, month.month + 1, 0);
     }
 
-    final localized = tz.TZDateTime.from(month, location);
-    return tz.TZDateTime(location, localized.year, localized.month + 1, 0);
+    return tz.TZDateTime(location, month.year, month.month + 1, 0);
   }
 
   bool _isBeforeMonth(DateTime day, DateTime month) {

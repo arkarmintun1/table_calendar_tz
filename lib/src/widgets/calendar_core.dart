@@ -318,8 +318,7 @@ class CalendarCore extends StatelessWidget {
       return DateTime.utc(month.year, month.month);
     }
 
-    final localized = tz.TZDateTime.from(month, location);
-    return tz.TZDateTime(location, localized.year, localized.month);
+    return tz.TZDateTime(location, month.year, month.month);
   }
 
   DateTime _lastDayOfMonth(DateTime month) {
@@ -329,8 +328,7 @@ class CalendarCore extends StatelessWidget {
       return DateTime.utc(month.year, month.month + 1, 0);
     }
 
-    final localized = tz.TZDateTime.from(month, location);
-    return tz.TZDateTime(location, localized.year, localized.month + 1, 0);
+    return tz.TZDateTime(location, month.year, month.month + 1, 0);
   }
 
   int _getRowCount(CalendarFormat format, DateTime focusedDay) {

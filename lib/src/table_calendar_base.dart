@@ -374,8 +374,7 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
       return DateTime.utc(month.year, month.month);
     }
 
-    final localized = tz.TZDateTime.from(month, location);
-    return tz.TZDateTime(location, localized.year, localized.month);
+    return tz.TZDateTime(location, month.year, month.month);
   }
 
   DateTime _lastDayOfMonth(DateTime month) {
@@ -385,8 +384,7 @@ class _TableCalendarBaseState extends State<TableCalendarBase> {
       return DateTime.utc(month.year, month.month + 1, 0);
     }
 
-    final localized = tz.TZDateTime.from(month, location);
-    return tz.TZDateTime(location, localized.year, localized.month + 1, 0);
+    return tz.TZDateTime(location, month.year, month.month + 1, 0);
   }
 
   DateTime _createDateTime(int year, int month, [int day = 1]) {

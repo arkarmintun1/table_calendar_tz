@@ -51,8 +51,7 @@ DateTime normalizeDate(DateTime date, {tz.Location? location}) {
     return DateTime.utc(date.year, date.month, date.day);
   }
 
-  final target = tz.TZDateTime.from(date, loc);
-  return tz.TZDateTime(loc, target.year, target.month, target.day);
+  return tz.TZDateTime(loc, date.year, date.month, date.day);
 }
 
 /// Checks if two DateTime objects are the same day.
